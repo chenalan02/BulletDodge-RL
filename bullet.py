@@ -27,9 +27,9 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.y= int(self.y)
 
     def in_range(self):
-        if self.rect.x < 0 or self.rect.x > SCREEN_SIZE[0] + 50:
+        if self.rect.x < 0 or self.rect.x > SCREEN_SIZE[0]:
             return False
-        if self.rect.y < 0 or self.rect.y > SCREEN_SIZE[1] + 50:
+        if self.rect.y < 0 or self.rect.y > SCREEN_SIZE[1]:
             return False
         else:
             return True

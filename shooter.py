@@ -1,7 +1,7 @@
 import pygame
 import os
 from bullet import Bullet
-from math import atan, degrees, pi, dist, radians
+from math import atan, pi, radians
 from random import randint
 from constants import *
 

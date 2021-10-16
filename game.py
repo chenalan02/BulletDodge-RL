@@ -1,12 +1,17 @@
 import pygame
 import os
+import sys
+
 from shooter import Shooter, HardCodedAI, Player
 from bullet import Bullet
 from constants import *
+import numpy as np
+import cv2
+
 
 class Map():
-    def __init__ (self, backgroundFileName, FPS):
-        self.background = pygame.image.load(os.path.join(("game_assets"), backgroundFileName))
+    def __init__ (self, FPS):
+        self.background = pygame.image.load(os.path.join(("game_assets"), "black.jpg"))
         self.background = pygame.transform.scale(self.background, SCREEN_SIZE)
 
         self.screenSize = SCREEN_SIZE
@@ -25,9 +30,8 @@ class Map():
         self.clock = pygame.time.Clock()
         pygame.mouse.set_visible(1)
     
-    def update(self):
+    def move(self):
         for event in pygame.event.get():
-
 
             if event.type == pygame.KEYUP:
                 #stops movement in left direction when the left key is released
@@ -52,30 +56,59 @@ class Map():
                     self.player.moveUp()
                 if event.key==pygame.K_s:
                     self.player.moveDown()
+            
+            pygame.event.wait()
 
             #quits game if x clicked on top right of screen
             if event.type == pygame.QUIT:
-                gameDone = True
-                return gameDone
+                pygame.quit()
+                sys.exit()
+
+    def update(self, action=0):
+        
+        if action == 1:
+            self.player.moveLeft()
+        elif action == 2:
+            self.player.moveRight()
+        elif action == 3:
+            self.player.moveUp()
+        elif action == 4:
+            self.player.moveDown()
+        elif action == 5:
+            self.player.stop()
         
         self.player.update(self.bullets)
 
         for enemy in self.enemies:
             enemy.update(self.bullets)
 
+        reward = 0
+
         for bullet in self.bullets:
             bullet.move()
             if not bullet.in_range():
                 self.bullets.remove(bullet)
+                self.score += 1
+                reward = 1
 
-        playerDead = self.player.check_death(self.bullets)
-        if playerDead:
-            self.restart()
-
-        self.score += 1
         self.draw()
         pygame.display.flip()
         self.clock.tick(self.FPS)
+
+        nextFrame = pygame.surfarray.pixels3d(self.background)
+        nextFrame = cv2.cvtColor(nextFrame, cv2.COLOR_BGR2GRAY)
+        nextFrame = np.array(nextFrame, dtype="float")
+        nextFrame = nextFrame.swapaxes(0,1)
+        nextFrame /= 255
+
+        playerDead = self.player.check_death(self.bullets)
+        if playerDead:
+            nextFrame = self.restart()
+            done = True
+        else:
+            done = False
+        
+        return nextFrame, reward, done
 
     def restart(self):
         self.player.reinitialize()
@@ -83,6 +116,14 @@ class Map():
             enemy.reinitialize()
         self.score = 0
         self.bullets.empty()
+        self.draw()
+
+        nextFrame = pygame.surfarray.pixels3d(self.background)
+        nextFrame = cv2.cvtColor(nextFrame, cv2.COLOR_BGR2GRAY)
+        nextFrame = np.array(nextFrame, dtype="float")
+        nextFrame = nextFrame.swapaxes(0,1)
+        nextFrame /= 255
+        return nextFrame
 
     def draw(self):
         self.background.fill((0,0,0))
@@ -99,5 +140,10 @@ class Map():
         text= font.render(str(self.score), True, (255, 255, 255))
         self.screen.blit(text, [0,0])
 
-    def addAI(self, coordinates: tuple, speed, cooldown, movementFactor):
+    def addHardcodedAI(self, coordinates: tuple, speed, cooldown, movementFactor):
         self.enemies.add(HardCodedAI(coordinates, speed, cooldown, movementFactor, self.player))
+
+class RLEnv(Map):
+    def __init__ (self, FPS):
+        super().__init__(FPS)
+        self.addHardcodedAI( (0,0), speed=0.5, cooldown= 50, movementFactor=25)

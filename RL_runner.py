@@ -16,9 +16,9 @@ if __name__ == '__main__':
         print(i+1)
 
         if i % MODEL_SAVE_RATE == 0:
-            agent.save("model2_ep"+str(i+1)+".h5", "model2_ep"+str(i+1)+"_scores.csv")
+            agent.save("model3_ep"+str(i+1)+".h5", "model3_ep"+str(i+1)+"_scores.csv")
 
     if agent.train == True:
-        agent.save("model2.h5", "model2_scores.csv")
+        agent.save("model3.h5", "model3_scores.csv")
 
     agent.plot()

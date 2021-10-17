@@ -111,7 +111,7 @@ class HardCodedAI(Shooter):
         if deltaX < 0:
             angle += pi
 
-        randomness = radians(randint(-5, 5))
+        randomness = radians(randint(-4, 4))
         angle += randomness
             
         bulletList.add(Bullet( (self.x + SHOOTER_SIZE[0]/2, self.y + SHOOTER_SIZE[0]/2), angle))

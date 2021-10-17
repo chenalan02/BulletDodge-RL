@@ -20,7 +20,6 @@ class Agent():
         x = Conv2D(64, (3,3), strides=1, padding='same', activation='relu')(x)
 
         x = Flatten()(x)
-        x = Dense(64, activation='relu')(x)
         x = Dense(512, activation='relu')(x)
         x = Dense(NUM_ACTIONS)(x)
 
@@ -65,7 +64,7 @@ class Agent():
             targets_full[np.arange(self.replayBuffer.batchSize), actions] = targets
 
             if self.train:
-                self.model.train_on_batch(states, targets)
+                self.model.train_on_batch(states, targets_full)
 
             if self.epsilon > self.epsilonMin:
                 self.epsilon *= self.epsilonDecay

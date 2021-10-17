@@ -103,8 +103,9 @@ class Map():
 
         playerDead = self.player.check_death(self.bullets)
         if playerDead:
-            nextFrame = self.restart()
+            self.restart()
             done = True
+            reward = -5
         else:
             done = False
         
@@ -131,7 +132,7 @@ class Map():
         self.dodger.draw(self.background)
         self.enemies.draw(self.background)
         self.bullets.draw(self.background)
-        resized_screen = pygame.transform.scale(self.background, (800, 600)) 
+        resized_screen = pygame.transform.scale(self.background, DISPLAY_SIZE) 
         self.screen.blit(resized_screen, (0,0))
         self.display_score()
 

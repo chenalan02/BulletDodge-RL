@@ -11,20 +11,23 @@ import tensorflow as tf
 import csv
 
 class Agent():
-    def __init__(self, train:bool, targetUpdateWait, gamma, epsilon, epsilonDecay, epsilonMin, maxScore):
+    def __init__(self, train:bool, targetUpdateWait, gamma, epsilon, epsilonDecayConst, epsilonMin, maxScore, replayRate):
         self.env = RLEnv(FPS=2000)
         
+        wInitializer =tf.keras.initializers.VarianceScaling(scale=2)
+        bInitializer = tf.zeros_initializer()
+
         i = Input(shape = (HISTORY_LENGTH, SCREEN_SIZE[1], SCREEN_SIZE[0]))
-        x = Conv2D(32, (8,8), strides=4, padding='same', activation='relu')(i)
-        x = Conv2D(64, (4,4), strides=2, padding='same', activation='relu')(x)
-        x = Conv2D(64, (3,3), strides=1, padding='same', activation='relu')(x)
+        x = Conv2D(32, (8,8), strides=(4,4), padding='same', activation='relu', kernel_initializer=wInitializer)(i)
+        x = Conv2D(64, (4,4), strides=(2,2), padding='same', activation='relu', kernel_initializer=wInitializer)(x)
+        x = Conv2D(64, (3,3), strides=(1,1), padding='same', activation='relu', kernel_initializer=wInitializer)(x)
 
         x = Flatten()(x)
-        x = Dense(512, activation='relu')(x)
-        x = Dense(NUM_ACTIONS)(x)
+        x = Dense(512, activation='relu', kernel_initializer=wInitializer, bias_initializer=bInitializer)(x)
+        x = Dense(NUM_ACTIONS, kernel_initializer=wInitializer, bias_initializer=bInitializer)(x)
 
         self.model = Model(i, x)
-        self.model.compile(loss= 'mse', optimizer='adam')
+        self.model.compile(loss= tf.keras.losses.Huber(delta=1.0), optimizer='adam')
         self.targetModel = clone_model(self.model)
         self.targetModel.set_weights(self.model.get_weights())
 
@@ -34,17 +37,20 @@ class Agent():
         
         self.replayBuffer = ReplayBuffer(frameHeight=SCREEN_SIZE[1], frameWidth=SCREEN_SIZE[0], 
                             maxSize=MAX_EXPERIENCES, historyLength=HISTORY_LENGTH, batchSize=32)
+
+        self.replayRate = replayRate
         self.gamma = gamma
         self.epsilon = epsilon
-        self.epsilonDecay = epsilonDecay
         self.epsilonMin = epsilonMin
         self.maxScore = maxScore
+        self.epsilonChange = (epsilon-epsilonMin)/epsilonDecayConst
 
         self.scores = []
 
     def get_action(self, state):
         if np.random.rand() < self.epsilon:
             return np.random.randint(NUM_ACTIONS)
+
         else:
             QVals = self.targetModel.predict(tf.expand_dims(state, axis=0))
             return np.argmax(QVals[0])
@@ -65,9 +71,6 @@ class Agent():
 
             if self.train:
                 self.model.train_on_batch(states, targets_full)
-
-            if self.epsilon > self.epsilonMin:
-                self.epsilon *= self.epsilonDecay
 
 
     def update_state(self, state, frame):
@@ -96,12 +99,14 @@ class Agent():
 
             if self.train:
                 self.replayBuffer.add_experience(nextFrame, action, reward, done)
-                if self.currentFrame % 2 == 0:
+                if self.currentFrame % self.replayRate == 0:
                     self.trainReplay()
 
             state = nextState
             self.currentFrame += 1
         
+        self.epsilon = max(self.epsilon - self.epsilonChange, self.epsilonMin)
+
         self.scores.append(score)
 
     def load(self, modelDir):

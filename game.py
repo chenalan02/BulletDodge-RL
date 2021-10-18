@@ -105,7 +105,7 @@ class Map():
         if playerDead:
             self.restart()
             done = True
-            reward = -5
+            reward = -10
         else:
             done = False
         

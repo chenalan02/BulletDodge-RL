@@ -3,7 +3,7 @@ import numpy as np
 from constants import *
 
 if __name__ == '__main__':
-    agent = Agent(train=True, targetUpdateWait=TARGET_UPDATE_WAIT, gamma=GAMMA, epsilon=EPSILON, epsilonDecay= EPSILON_DECAY, epsilonMin=EPSILON_MIN, maxScore = MAX_SCORE)
+    agent = Agent(train=True, targetUpdateWait=TARGET_UPDATE_WAIT, gamma=GAMMA, epsilon=EPSILON, epsilonDecayConst= EPSILON_DECAY_CONST, epsilonMin=EPSILON_MIN, maxScore = MAX_SCORE, replayRate = REPLAY_RATE)
 
     for i in range(MIN_EXPERIENCES):
         action = np.random.choice(NUM_ACTIONS)
@@ -16,9 +16,9 @@ if __name__ == '__main__':
         print(i+1)
 
         if i % MODEL_SAVE_RATE == 0:
-            agent.save("model3_ep"+str(i+1)+".h5", "model3_ep"+str(i+1)+"_scores.csv")
+            agent.save("model4_ep"+str(i+1)+".h5", "model4_ep"+str(i+1)+"_scores.csv")
 
     if agent.train == True:
-        agent.save("model3.h5", "model3_scores.csv")
+        agent.save("model4.h5", "model4_scores.csv")
 
     agent.plot()
